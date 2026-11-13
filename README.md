@@ -1,8 +1,21 @@
-# jinnangxia
+# 锦囊匣 · jinnangxia
 
-Official binary distribution of jinnangxia by 亮有一计.
+Workflow automation and enterprise API execution for AI agents. jinnangxia is the official command-line interface for 锦囊匣, operated by 杭州亮有一计科技有限公司 (Liang You Yi Ji).
 
-Website: https://liangyouyiji.com · Support: support@liangyouyiji.com
+锦囊匣连接企业 API、Webhook、邮件与数据表，提供可视化流程编排、人工确认和运行记录。jinnangxia 是面向工程团队与 AI Agent 的命令行入口，用于查询能力、校验输入、交付流程与诊断已有运行。具体执行能力取决于目标环境的连接器、账号权限和已发布动作。
+
+[官网 / Website](https://liangyouyiji.com) · [帮助中心 / Documentation](https://liangyouyiji.com/help) · [下载与迁移 / Installation](https://liangyouyiji.com/help/jinnangxia-install) · [Releases](https://github.com/liangyouyiji-dev/jinnangxia/releases/latest)
+
+Support: support@liangyouyiji.com
+
+## Start with a specific task
+
+- [Connect an OpenAPI service](https://liangyouyiji.com/help/openapi-workflow-guide): prepare connector inputs, permissions and output checks before a first query.
+- [Let an AI agent use enterprise APIs](https://liangyouyiji.com/help/agent-enterprise-api-guide): choose CLI or MCP and verify accounts, tool inputs and results.
+- [Diagnose a failed workflow](https://liangyouyiji.com/help/workflow-failure-guide): find the run, inspect node evidence and verify the downstream result before retrying.
+- [Evaluate workflow platforms, including n8n](https://liangyouyiji.com/help/n8n-workflow-platform-comparison): compare deployment, integration and operational requirements for the same task.
+
+The CLI does not grant access by installation. Use your own authorized account and an explicitly selected endpoint and workspace. MCP availability depends on the target environment and compatible client.
 
 This repository contains installation tooling and binary releases. Application source code is maintained privately. GitHub's automatically generated “Source code” archives contain only this distribution repository; download the platform archive to install jinnangxia.
 
