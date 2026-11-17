@@ -1,6 +1,6 @@
 # 锦囊匣 · jnbox
 
-CLI 主命令为 `jnbox`，原 `jinnangxia` 命令保留为兼容入口。已有 `~/.jinnangxia` 配置、登录态和 `JINNANGXIA_*` 环境变量继续使用，无需重新登录。Skill 标识及安装目录仍为 `jinnangxia`，其中命令示例使用 `jnbox`。公开下载仓库、签名身份和 `jinnangxia_<version>_*` 安装包名称保留，包内提供 `jnbox` 与旧命令。macOS/Linux 安装器将旧名链接到 `jnbox`，两者升级同一程序；Windows 保留两个可执行入口，升级当前调用的入口。
+CLI 命令和新发行包均只使用 `jnbox`，包内只提供 `jnbox`（Windows 为 `jnbox.exe`）。安装成功后移除同目录的旧 `jinnangxia` 命令。已有 `~/.jinnangxia` 配置、登录态、`JINNANGXIA_*` 环境变量及 Skill 标识继续使用，无需重新登录。公开下载仓库和签名身份保持不变。旧版 CLI 迁移请重新运行下方签名安装器；新版本使用 `jnbox upgrade` 更新。
 
 Workflow automation and enterprise API execution for AI agents. jnbox is the official command-line interface for 锦囊匣, operated by 杭州亮有一计科技有限公司 (Liang You Yi Ji).
 
@@ -53,7 +53,7 @@ curl -fsSLO https://raw.githubusercontent.com/liangyouyiji-dev/jinnangxia/main/s
 bash install.sh
 ```
 
-Default installation path: `~/.local/bin/jnbox`. Add `~/.local/bin` to your PATH if needed. Use `--install-dir PATH` or `--no-skill` to customize installation. Windows users can download the matching ZIP from Releases and verify it before extracting `jnbox.exe` (the compatible `jinnangxia.exe` is included).
+Default installation path: `~/.local/bin/jnbox`. Add `~/.local/bin` to your PATH if needed. Use `--install-dir PATH` or `--no-skill` to customize installation. Windows users can download the matching ZIP from Releases and verify it before extracting `jnbox.exe`.
 
 ## Releases and verification
 

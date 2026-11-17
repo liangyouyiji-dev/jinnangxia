@@ -8,10 +8,10 @@
 #   JINNANGXIA_VERSION=v0.2.0 INSTALL_DIR=/usr/local/bin curl -fsSL ... | bash
 #
 # 离线模式必须同时提供已签名 checksum 的三个 sidecar:
-#   bash install.sh --from-archive ./jinnangxia_0.1.0_linux_amd64.tar.gz \
-#     --checksum ./jinnangxia_0.1.0_checksums.txt \
-#     --signature ./jinnangxia_0.1.0_checksums.txt.sig \
-#     --certificate ./jinnangxia_0.1.0_checksums.txt.pem
+#   bash install.sh --from-archive ./jnbox_0.1.0_linux_amd64.tar.gz \
+#     --checksum ./jnbox_0.1.0_checksums.txt \
+#     --signature ./jnbox_0.1.0_checksums.txt.sig \
+#     --certificate ./jnbox_0.1.0_checksums.txt.pem
 
 set -euo pipefail
 
@@ -118,12 +118,12 @@ trap 'rm -rf "$TMPDIR"' EXIT
 VERSION_NO_V="${VERSION#v}"
 EXT="tar.gz"
 [ "$OS" = "windows" ] && EXT="zip"
-ARCHIVE_NAME="jinnangxia_${VERSION_NO_V}_${PLATFORM}.${EXT}"
+ARCHIVE_NAME="jnbox_${VERSION_NO_V}_${PLATFORM}.${EXT}"
 if [ -n "$ARCHIVE_FROM" ]; then
   ARCHIVE_NAME="$(basename "$ARCHIVE_FROM")"
 fi
 ARCHIVE_PATH="$TMPDIR/$ARCHIVE_NAME"
-CHECKSUM_NAME="jinnangxia_${VERSION_NO_V}_checksums.txt"
+CHECKSUM_NAME="jnbox_${VERSION_NO_V}_checksums.txt"
 CHECKSUM_PATH="$TMPDIR/$CHECKSUM_NAME"
 SIGNATURE_PATH="$CHECKSUM_PATH.sig"
 CERTIFICATE_PATH="$CHECKSUM_PATH.pem"
@@ -211,18 +211,22 @@ if ! HOME="$VERIFY_HOME" JINNANGXIA_DISABLE_ERROR_REPORT=1 "$INSTALL_TMP" versio
   rm -f "$INSTALL_TMP"
   err "installed artifact build identity/contract profile invalid; refuse installation"
 fi
-# Prepare both entry points from the same verified bytes before replacing either.
+# Preserve the previous executable before replacing it; retire the old command
+# only after the signed jnbox executable has passed both artifact checks.
 LEGACY_PATH="$INSTALL_DIR/jinnangxia"
 [ "$OS" = "windows" ] && LEGACY_PATH="${LEGACY_PATH}.exe"
-if [ "$OS" = "windows" ]; then
-  cp "$INSTALL_TMP" "$LEGACY_PATH.tmp"
-  chmod +x "$LEGACY_PATH.tmp"
-else
-  # Both names resolve to one upgrade target and share the existing upgrade lock.
-  ln -sfn jnbox "$LEGACY_PATH.tmp"
+PREVIOUS_PATH=""
+if [ -f "$INSTALL_PATH" ]; then
+  PREVIOUS_PATH="$INSTALL_PATH"
+elif [ -f "$LEGACY_PATH" ]; then
+  PREVIOUS_PATH="$LEGACY_PATH"
+fi
+if [ -n "$PREVIOUS_PATH" ]; then
+  cp -p "$PREVIOUS_PATH" "$INSTALL_PATH.bak.tmp"
+  mv "$INSTALL_PATH.bak.tmp" "$INSTALL_PATH.bak"
 fi
 mv "$INSTALL_TMP" "$INSTALL_PATH"
-mv "$LEGACY_PATH.tmp" "$LEGACY_PATH"
+rm -f "$LEGACY_PATH"
 
 # 4. 装 Skill
 if [ "${SKIP_SKILL:-0}" != "1" ]; then

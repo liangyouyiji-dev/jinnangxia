@@ -29,18 +29,18 @@ jobs:
           [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
           mkdir candidate
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir candidate
-          cp "jinnangxia_${TAG#v}_checksums.txt" expected-checksums.txt
-          cmp expected-checksums.txt "candidate/jinnangxia_${TAG#v}_checksums.txt"
+          cp "jnbox_${TAG#v}_checksums.txt" expected-checksums.txt
+          cmp expected-checksums.txt "candidate/jnbox_${TAG#v}_checksums.txt"
           python3 - <<'PY'
           import os, re
           from pathlib import Path
           version = os.environ['TAG'][1:]
-          expected = {f'jinnangxia_{version}_{p}.{ext}' for p, ext in [
+          expected = {f'jnbox_{version}_{p}.{ext}' for p, ext in [
               ('darwin_amd64','tar.gz'), ('darwin_arm64','tar.gz'),
               ('linux_amd64','tar.gz'), ('linux_arm64','tar.gz'),
               ('linux_386','tar.gz'), ('linux_riscv64','tar.gz'),
               ('windows_amd64','zip'), ('windows_arm64','zip')]}
-          expected.add(f'jinnangxia_{version}_sbom.json')
+          expected.add(f'jnbox_{version}_sbom.json')
           lines = Path('expected-checksums.txt').read_text().splitlines()
           assert len(lines) == len(expected)
           found = set()
@@ -51,7 +51,7 @@ jobs:
               found.add(name)
           assert found == expected
           PY
-          (cd candidate && sha256sum --check "jinnangxia_${TAG#v}_checksums.txt")
+          (cd candidate && sha256sum --check "jnbox_${TAG#v}_checksums.txt")
       - name: Install pinned Cosign
         run: |
           set -euo pipefail
@@ -62,12 +62,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir smoke
-          tar -xzf "candidate/jinnangxia_${TAG#v}_linux_amd64.tar.gz" -C smoke jinnangxia
-          JINNANGXIA_CONFIG_DIR="$RUNNER_TEMP/jinnangxia-check" JINNANGXIA_DISABLE_ERROR_REPORT=1 ./smoke/jinnangxia version --verify-artifact --expected-version "${TAG#v}" --require-contract schema/v1 --require-clean --format json
+          tar -xzf "candidate/jnbox_${TAG#v}_linux_amd64.tar.gz" -C smoke jnbox
+          JINNANGXIA_CONFIG_DIR="$RUNNER_TEMP/jinnangxia-check" JINNANGXIA_DISABLE_ERROR_REPORT=1 ./smoke/jnbox version --verify-artifact --expected-version "${TAG#v}" --require-contract schema/v1 --require-clean --format json
       - name: Sign distribution checksums with GitHub identity
         run: |
           set -euo pipefail
-          manifest="candidate/jinnangxia_${TAG#v}_checksums.txt"
+          manifest="candidate/jnbox_${TAG#v}_checksums.txt"
           ./cosign sign-blob --yes --output-signature "$manifest.sig" --output-certificate "$manifest.pem" "$manifest"
           ./cosign verify-blob --certificate "$manifest.pem" --signature "$manifest.sig" --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@refs/tags/${TAG}" "$manifest"
           gh release upload "$TAG" "$manifest.sig" "$manifest.pem" --repo "$GITHUB_REPOSITORY" --clobber
