@@ -1,12 +1,12 @@
 # 锦囊匣 · jnbox
 
-CLI 命令和新发行包均只使用 `jnbox`，包内只提供 `jnbox`（Windows 为 `jnbox.exe`）。安装成功后移除同目录的旧 `jinnangxia` 命令。已有 `~/.jinnangxia` 配置、登录态、`JINNANGXIA_*` 环境变量及 Skill 标识继续使用，无需重新登录。公开下载仓库和签名身份保持不变。旧版 CLI 迁移请重新运行下方签名安装器；新版本使用 `jnbox upgrade` 更新。
+`jnbox` 是锦囊匣的命令行工具。所有发行包与命令均使用 `jnbox`，Windows 可执行文件为 `jnbox.exe`。
 
 Workflow automation and enterprise API execution for AI agents. jnbox is the official command-line interface for 锦囊匣, operated by 杭州亮有一计科技有限公司 (Liang You Yi Ji).
 
 锦囊匣连接企业 API、Webhook、邮件与数据表，提供可视化流程编排、人工确认和运行记录。jnbox 是面向工程团队与 AI Agent 的命令行入口，用于查询能力、校验输入、交付流程与诊断已有运行。具体执行能力取决于目标环境的连接器、账号权限和已发布动作。
 
-[官网 / Website](https://liangyouyiji.com) · [帮助中心 / Documentation](https://liangyouyiji.com/help) · [下载与迁移 / Installation](https://liangyouyiji.com/help/jinnangxia-install) · [Releases](https://github.com/liangyouyiji-dev/jinnangxia/releases/latest)
+[官网 / Website](https://liangyouyiji.com) · [帮助中心 / Documentation](https://liangyouyiji.com/help) · [安装 / Installation](#install) · [Releases](https://github.com/liangyouyiji-dev/jnbox/releases/latest)
 
 Support: support@liangyouyiji.com
 
@@ -49,7 +49,7 @@ This repository contains installation tooling and binary releases. Application s
 Install [Cosign](https://docs.sigstore.dev/cosign/system_config/installation/) first (the release verification flow uses Cosign 2.6.0). Then download and inspect the installer:
 
 ```sh
-curl -fsSLO https://raw.githubusercontent.com/liangyouyiji-dev/jinnangxia/main/scripts/install.sh
+curl -fsSLO https://raw.githubusercontent.com/liangyouyiji-dev/jnbox/main/scripts/install.sh
 bash install.sh
 ```
 
@@ -57,7 +57,7 @@ Default installation path: `~/.local/bin/jnbox`. Add `~/.local/bin` to your PATH
 
 ## Releases and verification
 
-Download your platform archive from [GitHub Releases](https://github.com/liangyouyiji-dev/jinnangxia/releases/latest).
+Download your platform archive from [GitHub Releases](https://github.com/liangyouyiji-dev/jnbox/releases/latest).
 
 Releases include macOS (amd64/arm64), Linux (amd64/arm64/386/riscv64), and Windows (amd64/arm64) archives, a dependency SBOM, SHA-256 checksums, and Cosign signature/certificate files. Distribution checksums are signed by this repository's `.github/workflows/release.yml` workflow at the release tag, using GitHub Actions OIDC. This authenticates the distribution; it is not a claim that private application source was built on GitHub.
 
@@ -73,10 +73,6 @@ jnbox upgrade
 
 Upgrade checks the latest stable GitHub release and only upgrades when it is newer. `jnbox upgrade --force` explicitly reinstalls the latest release (including a downgrade). `jnbox upgrade --no-skill` updates only the executable. Cosign must be available on PATH. The previous executable is retained as `<current-executable>.bak` (`jnbox.bak` for new installations). Configure and log into your own endpoint with an explicit `--profile local|test|prod`; installation does not configure production access.
 
-Version checks and upgrades are independent of backend profiles and login credentials. They work even when a production endpoint is not configured. Set their output preferences with command-line flags or `JINNANGXIA_FORMAT` / `JINNANGXIA_LANG`.
+Version checks and upgrades are independent of backend profiles and login credentials. They work even when a production endpoint is not configured. Set their output preferences with the `--format` and `--lang` flags.
 
 For bugs or installation questions, open an issue without credentials, tokens or personal data.
-
-## Migration from flowctl
-
-The product is now 锦囊匣. Install `jnbox` from this repository and update scripts and Agent instructions to use the new command and the existing `$jinnangxia` Skill. Environment variables now use `JINNANGXIA_`; the default configuration directory is `~/.jinnangxia`. The installer does not copy credentials or read the old directory automatically. To deliberately reuse your own previous configuration, set `JINNANGXIA_CONFIG_DIR` to its absolute directory and check your endpoint and profile before running commands. Historical flowctl downloads remain in the old distribution repository; its upgrade command does not migrate across repositories.

@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   distribute:
-    if: github.repository == 'liangyouyiji-dev/jinnangxia' && github.event.release.prerelease
+    if: github.repository == 'liangyouyiji-dev/jnbox' && github.event.release.prerelease
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -63,7 +63,7 @@ jobs:
           set -euo pipefail
           mkdir smoke
           tar -xzf "candidate/jnbox_${TAG#v}_linux_amd64.tar.gz" -C smoke jnbox
-          JINNANGXIA_CONFIG_DIR="$RUNNER_TEMP/jinnangxia-check" JINNANGXIA_DISABLE_ERROR_REPORT=1 ./smoke/jnbox version --verify-artifact --expected-version "${TAG#v}" --require-contract schema/v1 --require-clean --format json
+          HOME="$RUNNER_TEMP/jnbox-check" JNBOX_DISABLE_ERROR_REPORT=1 ./smoke/jnbox version --verify-artifact --expected-version "${TAG#v}" --require-contract schema/v1 --require-clean --format json
       - name: Sign distribution checksums with GitHub identity
         run: |
           set -euo pipefail

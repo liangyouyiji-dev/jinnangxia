@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# v6.33 #82: jinnangxia 一键安装脚本
+# v6.33 #82: jnbox 一键安装脚本
 #
 # 用法 (curl pipe):
-#   curl -fsSL https://raw.githubusercontent.com/liangyouyiji-dev/jinnangxia/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/liangyouyiji-dev/jnbox/main/scripts/install.sh | bash
 #
 # 自定义版本 / 安装目录:
-#   JINNANGXIA_VERSION=v0.2.0 INSTALL_DIR=/usr/local/bin curl -fsSL ... | bash
+#   JNBOX_VERSION=v0.2.0 INSTALL_DIR=/usr/local/bin curl -fsSL ... | bash
 #
 # 离线模式必须同时提供已签名 checksum 的三个 sidecar:
 #   bash install.sh --from-archive ./jnbox_0.1.0_linux_amd64.tar.gz \
@@ -15,17 +15,17 @@
 
 set -euo pipefail
 
-REPO_OWNER="${JINNANGXIA_REPO_OWNER:-liangyouyiji-dev}"
-REPO_NAME="${JINNANGXIA_REPO_NAME:-jinnangxia}"
-VERSION="${JINNANGXIA_VERSION:-latest}"
+REPO_OWNER="${JNBOX_REPO_OWNER:-liangyouyiji-dev}"
+REPO_NAME="${JNBOX_REPO_NAME:-jnbox}"
+VERSION="${JNBOX_VERSION:-latest}"
 INSTALL_DIR="${INSTALL_DIR:-${HOME}/.local/bin}"
-SKILL_DIR="${JINNANGXIA_SKILL_DIR:-}"
+SKILL_DIR="${JNBOX_SKILL_DIR:-}"
 ARCHIVE_FROM=""
 CHECKSUM_FROM=""
 SIGNATURE_FROM=""
 CERTIFICATE_FROM=""
 CERTIFICATE_ISSUER="https://token.actions.githubusercontent.com"
-CERTIFICATE_IDENTITY='^https://github\.com/liangyouyiji-dev/jinnangxia/\.github/workflows/release\.yml@refs/tags/v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
+CERTIFICATE_IDENTITY='^https://github\.com/liangyouyiji-dev/jnbox/\.github/workflows/release\.yml@refs/tags/v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -42,9 +42,9 @@ while [[ $# -gt 0 ]]; do
 jnbox installer
 
 环境变量:
-  JINNANGXIA_VERSION    版本 (默认 latest)
+  JNBOX_VERSION    版本 (默认 latest)
   INSTALL_DIR        二进制安装目录 (默认 ~/.local/bin)
-  JINNANGXIA_SKILL_DIR  自定义 Skill 安装目录（默认同时安装 Claude Code 和 Codex）
+  JNBOX_SKILL_DIR  自定义 Skill 安装目录（默认同时安装 Claude Code 和 Codex）
 
 参数:
   --version <v>          指定版本 (e.g. v0.1.0)
@@ -112,7 +112,7 @@ if [ -z "$ARCHIVE_FROM" ] && [ "$VERSION" = "latest" ]; then
 fi
 
 # 3. 下载 / 解压
-TMPDIR="$(mktemp -d -t jinnangxia-install-XXXXXX)"
+TMPDIR="$(mktemp -d -t jnbox-install-XXXXXX)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
 VERSION_NO_V="${VERSION#v}"
@@ -173,18 +173,16 @@ else
   unzip -q "$ARCHIVE_PATH" -d "$TMPDIR"
 fi
 
-# 找到 jinnangxia 二进制 (无论是 root 还是 子目录)
+# 找到 jnbox 二进制 (无论是 root 还是 子目录)
 BIN_PATH="$(find "$TMPDIR" -type f \( -name 'jnbox' -o -name 'jnbox.exe' \) 2>/dev/null | head -1)"
-if [ -z "$BIN_PATH" ]; then
-  BIN_PATH="$(find "$TMPDIR" -type f \( -name 'jinnangxia' -o -name 'jinnangxia.exe' \) 2>/dev/null | head -1)"
-fi
-[ -z "$BIN_PATH" ] && err "解压后找不到 jnbox / jinnangxia 二进制"
+
+[ -z "$BIN_PATH" ] && err "解压后找不到 jnbox 二进制"
 
 # 签名只能证明制品来源；安装前还必须校验版本坐标和命令合同能力，
 # 防止同一 SemVer 下安装协议不兼容或缺少构建身份的旧二进制。
 VERIFY_HOME="$TMPDIR/verify-home"
 mkdir -p "$VERIFY_HOME"
-if ! HOME="$VERIFY_HOME" JINNANGXIA_DISABLE_ERROR_REPORT=1 "$BIN_PATH" version \
+if ! HOME="$VERIFY_HOME" JNBOX_DISABLE_ERROR_REPORT=1 "$BIN_PATH" version \
   --verify-artifact \
   --expected-version "$VERSION_NO_V" \
   --require-contract schema/v1 \
@@ -202,7 +200,7 @@ chmod +x "$INSTALL_TMP"
 # Warm and verify the exact installation inode before the atomic rename. On
 # managed macOS hosts, first execution of a new Mach-O inode may spend seconds
 # in provenance/EDR scanning; doing it here keeps the first user command fast.
-if ! HOME="$VERIFY_HOME" JINNANGXIA_DISABLE_ERROR_REPORT=1 "$INSTALL_TMP" version \
+if ! HOME="$VERIFY_HOME" JNBOX_DISABLE_ERROR_REPORT=1 "$INSTALL_TMP" version \
   --verify-artifact \
   --expected-version "$VERSION_NO_V" \
   --require-contract schema/v1 \
@@ -213,31 +211,22 @@ if ! HOME="$VERIFY_HOME" JINNANGXIA_DISABLE_ERROR_REPORT=1 "$INSTALL_TMP" versio
 fi
 # Preserve the previous executable before replacing it; retire the old command
 # only after the signed jnbox executable has passed both artifact checks.
-LEGACY_PATH="$INSTALL_DIR/jinnangxia"
-[ "$OS" = "windows" ] && LEGACY_PATH="${LEGACY_PATH}.exe"
-PREVIOUS_PATH=""
 if [ -f "$INSTALL_PATH" ]; then
-  PREVIOUS_PATH="$INSTALL_PATH"
-elif [ -f "$LEGACY_PATH" ]; then
-  PREVIOUS_PATH="$LEGACY_PATH"
-fi
-if [ -n "$PREVIOUS_PATH" ]; then
-  cp -p "$PREVIOUS_PATH" "$INSTALL_PATH.bak.tmp"
+  cp -p "$INSTALL_PATH" "$INSTALL_PATH.bak.tmp"
   mv "$INSTALL_PATH.bak.tmp" "$INSTALL_PATH.bak"
 fi
 mv "$INSTALL_TMP" "$INSTALL_PATH"
-rm -f "$LEGACY_PATH"
 
 # 4. 装 Skill
 if [ "${SKIP_SKILL:-0}" != "1" ]; then
   if [ -n "$SKILL_DIR" ]; then
     info "[5/5] 装 base Skill 到 $SKILL_DIR"
-    SKILL_ARGS=(--target "$SKILL_DIR")
+    SKILL_ARGS=(install-skill --target "$SKILL_DIR")
   else
     info "[5/5] 同步 Claude Code 和 Codex base Skill"
-    SKILL_ARGS=()
+    SKILL_ARGS=(install-skill)
   fi
-  "$INSTALL_PATH" install-skill "${SKILL_ARGS[@]}" >/dev/null 2>&1 || {
+  "$INSTALL_PATH" "${SKILL_ARGS[@]}" >/dev/null 2>&1 || {
     info "  (Skill 安装失败, 但二进制已装好; 用 \`jnbox install-skill\` 重试)"
   }
 fi
