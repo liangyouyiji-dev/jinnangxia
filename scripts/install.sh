@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]; do
     --no-skill) SKIP_SKILL=1; shift;;
     --help|-h)
       cat <<EOF
-jinnangxia installer
+jnbox installer
 
 环境变量:
   JINNANGXIA_VERSION    版本 (默认 latest)
@@ -92,7 +92,7 @@ PLATFORM="$(detect_platform)"
 OS="${PLATFORM%_*}"
 ARCH="${PLATFORM#*_}"
 
-echo "jinnangxia installer"
+echo "jnbox installer"
 info "platform:    ${PLATFORM}"
 info "version:     ${VERSION}"
 info "install dir: ${INSTALL_DIR}"
@@ -174,8 +174,11 @@ else
 fi
 
 # 找到 jinnangxia 二进制 (无论是 root 还是 子目录)
-BIN_PATH="$(find "$TMPDIR" -name 'jinnangxia' -o -name 'jinnangxia.exe' 2>/dev/null | grep -v "$ARCHIVE_NAME" | head -1)"
-[ -z "$BIN_PATH" ] && err "解压后找不到 jinnangxia 二进制"
+BIN_PATH="$(find "$TMPDIR" -type f \( -name 'jnbox' -o -name 'jnbox.exe' \) 2>/dev/null | head -1)"
+if [ -z "$BIN_PATH" ]; then
+  BIN_PATH="$(find "$TMPDIR" -type f \( -name 'jinnangxia' -o -name 'jinnangxia.exe' \) 2>/dev/null | head -1)"
+fi
+[ -z "$BIN_PATH" ] && err "解压后找不到 jnbox / jinnangxia 二进制"
 
 # 签名只能证明制品来源；安装前还必须校验版本坐标和命令合同能力，
 # 防止同一 SemVer 下安装协议不兼容或缺少构建身份的旧二进制。
@@ -190,7 +193,7 @@ if ! HOME="$VERIFY_HOME" JINNANGXIA_DISABLE_ERROR_REPORT=1 "$BIN_PATH" version \
   err "artifact build identity/contract profile invalid; refuse installation"
 fi
 
-INSTALL_PATH="$INSTALL_DIR/jinnangxia"
+INSTALL_PATH="$INSTALL_DIR/jnbox"
 [ "$OS" = "windows" ] && INSTALL_PATH="${INSTALL_PATH}.exe"
 INSTALL_TMP="$INSTALL_PATH.tmp"
 mv "$BIN_PATH" "$INSTALL_TMP"
@@ -208,7 +211,18 @@ if ! HOME="$VERIFY_HOME" JINNANGXIA_DISABLE_ERROR_REPORT=1 "$INSTALL_TMP" versio
   rm -f "$INSTALL_TMP"
   err "installed artifact build identity/contract profile invalid; refuse installation"
 fi
+# Prepare both entry points from the same verified bytes before replacing either.
+LEGACY_PATH="$INSTALL_DIR/jinnangxia"
+[ "$OS" = "windows" ] && LEGACY_PATH="${LEGACY_PATH}.exe"
+if [ "$OS" = "windows" ]; then
+  cp "$INSTALL_TMP" "$LEGACY_PATH.tmp"
+  chmod +x "$LEGACY_PATH.tmp"
+else
+  # Both names resolve to one upgrade target and share the existing upgrade lock.
+  ln -sfn jnbox "$LEGACY_PATH.tmp"
+fi
 mv "$INSTALL_TMP" "$INSTALL_PATH"
+mv "$LEGACY_PATH.tmp" "$LEGACY_PATH"
 
 # 4. 装 Skill
 if [ "${SKIP_SKILL:-0}" != "1" ]; then
@@ -220,12 +234,12 @@ if [ "${SKIP_SKILL:-0}" != "1" ]; then
     SKILL_ARGS=()
   fi
   "$INSTALL_PATH" install-skill "${SKILL_ARGS[@]}" >/dev/null 2>&1 || {
-    info "  (Skill 安装失败, 但二进制已装好; 用 \`jinnangxia install-skill\` 重试)"
+    info "  (Skill 安装失败, 但二进制已装好; 用 \`jnbox install-skill\` 重试)"
   }
 fi
 
 echo
-echo "✓ Installed jinnangxia:"
+echo "✓ Installed jnbox:"
 "$INSTALL_PATH" version 2>&1 | sed 's/^/    /'
 echo
 
@@ -247,10 +261,10 @@ esac
 
 cat <<EOF
 快速上手:
-  jinnangxia status                          # 检查 BE 是否在线
-  jinnangxia whoami                          # 当前身份
-  jinnangxia version --check                 # 检查更新
-  jinnangxia --help                          # 子命令一览
+  jnbox status                          # 检查 BE 是否在线
+  jnbox whoami                          # 当前身份
+  jnbox version --check                 # 检查更新
+  jnbox --help                          # 子命令一览
 
 文档: https://github.com/${REPO_OWNER}/${REPO_NAME}
 EOF
