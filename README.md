@@ -40,7 +40,7 @@ As of 2026-11-14, new third-party discovery in the hosted workbench exposes Deep
 - [Diagnose a failed workflow](https://liangyouyiji.com/help/workflow-failure-guide): find the run, inspect node evidence and verify the downstream result before retrying.
 - [Evaluate workflow platforms, including n8n](https://liangyouyiji.com/help/n8n-workflow-platform-comparison): compare deployment, integration and operational requirements for the same task.
 
-The CLI does not grant access by installation. Use your own authorized account and an explicitly selected endpoint and workspace. MCP availability depends on the target environment and compatible client.
+The CLI does not grant access by installation. The public CLI connects to https://liangyouyiji.com. Use your own authorized account and select a workspace. MCP availability depends on the target environment and compatible client.
 
 This repository contains installation tooling and binary releases. Application source code is maintained privately. GitHub's automatically generated “Source code” archives contain only this distribution repository; download the platform archive to install jnbox.
 
@@ -71,8 +71,10 @@ jnbox upgrade --check
 jnbox upgrade
 ```
 
-Upgrade checks the latest stable GitHub release and only upgrades when it is newer. `jnbox upgrade --force` explicitly reinstalls the latest release (including a downgrade). `jnbox upgrade --no-skill` updates only the executable. Cosign must be available on PATH. The previous executable is retained as `<current-executable>.bak` (`jnbox.bak` for new installations). Configure and log into your own endpoint with an explicit `--profile local|test|prod`; installation does not configure production access.
+Upgrade checks the latest stable GitHub release and only upgrades when it is newer. `jnbox upgrade --force` explicitly reinstalls the latest release (including a downgrade). `jnbox upgrade --no-skill` updates only the executable. Cosign must be available on PATH. The previous executable is retained as `<current-executable>.bak` (`jnbox.bak` for new installations). Run `jnbox login` to sign in to the production service.
 
-Version checks and upgrades are independent of backend profiles and login credentials. They work even when a production endpoint is not configured. Set their output preferences with the `--format` and `--lang` flags.
+Version checks and upgrades work before you sign in. Set their output preferences with the `--format` and `--lang` flags.
+
+Default credentials are stored in `~/.jnbox/credentials.yaml`. On first use, jnbox moves an existing default configuration to `~/.jnbox` if the new directory is absent. Use `JNBOX_CONFIG_DIR` with an absolute path for a separate login. To read the signed-in tenant name from a script, use the `tenantName` field in the JSON login result.
 
 For bugs or installation questions, open an issue without credentials, tokens or personal data.
