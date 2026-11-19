@@ -1,7 +1,11 @@
 name: Sign and verify binary distribution
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Draft release ID
+        type: string
+        required: true
 permissions:
   contents: write
   id-token: write
@@ -10,29 +14,31 @@ concurrency:
   cancel-in-progress: false
 jobs:
   distribute:
-    if: github.repository == 'liangyouyiji-dev/jnbox' && github.event.release.prerelease
+    if: github.repository == 'liangyouyiji-dev/jnbox' && github.ref_type == 'tag'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      TAG: ${{ github.event.release.tag_name }}
+      TAG: ${{ github.ref_name }}
+      RELEASE_ID: ${{ inputs.release_id }}
     steps:
       - name: Checkout distribution tag
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Validate candidate against reviewed manifest
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ "$RELEASE_ID" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" > draft.json
+          jq -e --arg tag "$TAG" '.draft and (.prerelease | not) and .tag_name == $tag' draft.json
           mkdir candidate
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir candidate
           cp "jnbox_${TAG#v}_checksums.txt" expected-checksums.txt
-          cmp expected-checksums.txt "candidate/jnbox_${TAG#v}_checksums.txt"
           python3 - <<'PY'
-          import os, re
+          import json, os, re, subprocess
           from pathlib import Path
           version = os.environ['TAG'][1:]
           expected = {f'jnbox_{version}_{p}.{ext}' for p, ext in [
@@ -50,7 +56,20 @@ jobs:
               assert name in expected and name not in found
               found.add(name)
           assert found == expected
+          manifest = f'jnbox_{version}_checksums.txt'
+          files = expected | {manifest}
+          assets = json.loads(Path('draft.json').read_text())['assets']
+          assert len({a['name'] for a in assets}) == len(assets)
+          assert files <= {a['name'] for a in assets} <= files | {manifest + '.sig', manifest + '.pem'}
+          for asset in assets:
+              if asset['name'] in files:
+                  assert asset['state'] == 'uploaded'
+                  with (Path('candidate') / asset['name']).open('wb') as out:
+                      subprocess.run(['gh', 'api', '-H', 'Accept: application/octet-stream',
+                                      f"repos/{os.environ['GITHUB_REPOSITORY']}/releases/assets/{int(asset['id'])}"],
+                                     stdout=out, check=True)
           PY
+          cmp expected-checksums.txt "candidate/jnbox_${TAG#v}_checksums.txt"
           (cd candidate && sha256sum --check "jnbox_${TAG#v}_checksums.txt")
       - name: Install pinned Cosign
         run: |
@@ -68,8 +87,9 @@ jobs:
         run: |
           set -euo pipefail
           manifest="candidate/jnbox_${TAG#v}_checksums.txt"
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" +            --jq '.draft and (.prerelease | not)' | grep -qx true
           ./cosign sign-blob --yes --output-signature "$manifest.sig" --output-certificate "$manifest.pem" "$manifest"
           ./cosign verify-blob --certificate "$manifest.pem" --signature "$manifest.sig" --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@refs/tags/${TAG}" "$manifest"
           gh release upload "$TAG" "$manifest.sig" "$manifest.pem" --repo "$GITHUB_REPOSITORY" --clobber
       - name: Keep candidate pending installation and upgrade verification
-        run: echo "Signed candidate $TAG is ready for installation and upgrade verification; promote manually after validation."
+        run: echo "Draft $TAG is signed and ready for acceptance."
