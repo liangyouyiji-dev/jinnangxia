@@ -87,7 +87,7 @@ jobs:
         run: |
           set -euo pipefail
           manifest="candidate/jnbox_${TAG#v}_checksums.txt"
-          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" +            --jq '.draft and (.prerelease | not)' | grep -qx true
+          gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" | jq -e --arg tag "$TAG" '.draft and (.prerelease | not) and .tag_name == $tag' >/dev/null
           ./cosign sign-blob --yes --output-signature "$manifest.sig" --output-certificate "$manifest.pem" "$manifest"
           ./cosign verify-blob --certificate "$manifest.pem" --signature "$manifest.sig" --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@refs/tags/${TAG}" "$manifest"
           gh release upload "$TAG" "$manifest.sig" "$manifest.pem" --repo "$GITHUB_REPOSITORY" --clobber
